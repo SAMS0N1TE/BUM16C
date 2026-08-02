@@ -4,6 +4,8 @@
 
 It is built with plain old HTML5, CSS3, and JavaScript. There's nothing to install and it should work entirely in-browser. 
 
+## Dive In! 🥽👉🏼 [BUM16](https://bennjordan.github.io/BUM16/)
+
 ---
 
 ## 🛠️ How it Works
