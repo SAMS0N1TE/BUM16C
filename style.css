@@ -1,0 +1,774 @@
+/*
+ * BUM16 - Benn's Ultrasonic Modem Stylesheet
+ * MS-DOS / BIOS Text-Mode Hacker Style (White, Gray, and Black)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+:root {
+  --bg-color: #000000;
+  --panel-bg: #000000;
+  --panel-border: #ffffff;
+  --panel-border-muted: #555555;
+  --accent-cyan: #ffffff;
+  --accent-emerald: #ffffff;
+  --accent-purple: #888888;
+  --accent-red: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #aaaaaa;
+  --text-disabled: #555555;
+  --sidebar-width: 280px;
+  --shadow-glow: none;
+  --shadow-glow-emerald: none;
+  --shadow-glow-purple: none;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0 !important; /* Force blocky DOS corners */
+}
+
+body {
+  font-family: 'Share Tech Mono', 'Courier New', Courier, monospace;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+
+/* Retro scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+  border: 1px solid var(--panel-border-muted);
+}
+::-webkit-scrollbar-thumb {
+  background: #555555;
+  border: 2px solid #000000;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #aaaaaa;
+}
+
+/* Sidebar Navigation (DOS Menu style) */
+aside {
+  width: var(--sidebar-width);
+  background-color: #000000;
+  border-right: 2px double var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px double var(--panel-border);
+  padding-bottom: 1rem;
+}
+
+.brand-logo {
+  display: none; /* Hide modern logo circle */
+}
+
+.brand-text h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.brand-text span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: block;
+  text-align: center;
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-grow: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+}
+
+.nav-item::before {
+  content: "[ ]";
+  color: var(--panel-border-muted);
+}
+
+.nav-item:hover {
+  color: #ffffff;
+  background: #222222;
+  border: 1px dashed var(--panel-border);
+}
+
+.nav-item.active {
+  color: #000000 !important;
+  background: #ffffff !important;
+  border: 1px solid #ffffff;
+}
+
+.nav-item.active::before {
+  content: "[X]";
+  color: #000000;
+}
+
+.sidebar-footer {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  border-top: 2px double var(--panel-border-muted);
+  padding-top: 1rem;
+}
+
+/* Main Content Area */
+main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: relative;
+}
+
+/* Top Stats Bar */
+.top-bar {
+  height: 45px;
+  background-color: #000000;
+  border-bottom: 2px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+}
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.indicator {
+  width: 12px;
+  height: 12px;
+  background-color: #000000;
+  border: 2px solid var(--text-secondary);
+  display: inline-block;
+}
+
+.indicator.pulse-green {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  animation: dosBlink 1s infinite steps(1);
+}
+
+.indicator.pulse-cyan {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  animation: dosBlink 1s infinite steps(1);
+}
+
+.indicator.pulse-purple {
+  background-color: #888888;
+  border-color: #ffffff;
+  animation: dosBlink 0.5s infinite steps(1);
+}
+
+/* App Containers */
+.content-container {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tab-content {
+  display: none;
+  height: 100%;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Grid Layouts */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.card {
+  background-color: #000000;
+  border: 2px solid var(--panel-border);
+  padding: 1.25rem;
+}
+
+.card h2 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ffffff;
+  border-bottom: 2px solid var(--panel-border);
+  padding-bottom: 0.4rem;
+  text-transform: uppercase;
+}
+
+.card h2 svg {
+  fill: #ffffff;
+  color: #ffffff;
+}
+
+/* Inputs and Forms */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+}
+
+.input-control {
+  width: 100%;
+  background-color: #000000;
+  border: 1px solid var(--panel-border-muted);
+  padding: 0.5rem;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.input-control:focus {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: none;
+}
+
+textarea.input-control {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Checkbox Toggle */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #ffffff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input {
+  cursor: pointer;
+}
+
+/* Custom Segmented Control */
+.segmented-control {
+  display: flex;
+  border: 1px solid var(--panel-border-muted);
+}
+
+.segment-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.segment-btn.active {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* DOS Command Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #000000;
+  border: 2px solid var(--panel-border);
+  color: #ffffff;
+  padding: 0.6rem 1.2rem;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.btn:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.btn:hover svg {
+  fill: #000000 !important;
+  color: #000000 !important;
+}
+
+.btn-primary {
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid var(--panel-border);
+}
+
+.btn-primary svg {
+  fill: #000000;
+}
+
+.btn-primary:hover {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.btn-primary:hover svg {
+  fill: #ffffff !important;
+}
+
+.btn:disabled, .btn-primary:disabled {
+  opacity: 0.25;
+  background-color: #000000 !important;
+  color: var(--text-disabled) !important;
+  border-color: var(--panel-border-muted) !important;
+  cursor: not-allowed;
+}
+
+.btn-emerald {
+  border: 2px solid #ffffff;
+}
+
+.btn-danger {
+  border: 2px dashed #ffffff;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Drag and Drop Zone */
+.upload-zone {
+  border: 2px dashed var(--panel-border-muted);
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  background-color: #000000;
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: #ffffff;
+  border-style: solid;
+}
+
+.upload-zone svg {
+  width: 36px;
+  height: 36px;
+  fill: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.upload-zone p {
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.upload-zone span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Image Previews Layout */
+.image-previews-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.preview-box {
+  background-color: #000000;
+  border: 1px solid var(--panel-border-muted);
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.preview-box h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.preview-canvas, .preview-img {
+  max-width: 100%;
+  max-height: 160px;
+  image-rendering: pixelated;
+  background-color: #000000;
+  border: 1px solid var(--panel-border-muted);
+}
+
+/* Terminal Log Console */
+.terminal-card {
+  grid-column: span 2;
+}
+
+.terminal-console {
+  background-color: #000000;
+  border: 2px solid var(--panel-border);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  color: #ffffff;
+  padding: 0.75rem;
+  height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.terminal-line {
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.terminal-line::before {
+  content: "> ";
+  color: var(--text-secondary);
+}
+
+.terminal-line.info { color: var(--text-secondary); }
+.terminal-line.success { color: #ffffff; font-weight: bold; }
+.terminal-line.warn { color: #ffffff; text-decoration: underline; }
+.terminal-line.error { color: #ffffff; background: #555555; }
+
+/* Spectrogram and Waveform displays */
+.visualizer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.viz-canvas {
+  width: 100%;
+  height: 140px;
+  background-color: #000000;
+  border: 2px solid var(--panel-border);
+}
+
+/* Live Player UI controls */
+.player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #000000;
+  padding: 0.75rem;
+  border: 2px solid var(--panel-border);
+  margin-top: 1rem;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-title {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.player-duration {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Range sliders (Blocky DOS style) */
+.range-slider-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.range-slider-group input[type="range"] {
+  flex-grow: 1;
+  accent-color: #ffffff;
+  background: #333333;
+}
+
+.range-slider-group span {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.95rem;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Decode Output Area */
+.decode-output-box {
+  background-color: #000000;
+  border: 2px dashed var(--panel-border-muted);
+  padding: 1.5rem;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.decode-placeholder {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.decode-placeholder svg {
+  width: 40px;
+  height: 40px;
+  fill: #555555;
+}
+
+.decode-result-text {
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  width: 100%;
+  text-align: left;
+  white-space: pre-wrap;
+  display: none;
+  border: 1px solid var(--panel-border-muted);
+  padding: 0.75rem;
+  background-color: #111111;
+}
+
+.decode-result-image {
+  max-width: 100%;
+  max-height: 240px;
+  display: none;
+  image-rendering: pixelated;
+  border: 2px solid var(--panel-border);
+  background-color: #000000;
+}
+
+/* Decrypt Overlay Prompt */
+.decrypt-prompt {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 280px;
+  width: 100%;
+  border: 2px solid #ffffff;
+  padding: 1rem;
+  background: #000000;
+}
+
+/* Loopback Self Test */
+.selftest-status {
+  padding: 1rem;
+  background-color: #000000;
+  border: 1px solid var(--panel-border-muted);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* Animations */
+@keyframes dosBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* Responsive details */
+@media (max-width: 900px) {
+  body {
+    flex-direction: column;
+    overflow: auto;
+    height: auto;
+  }
+  aside {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 2px solid var(--panel-border);
+    padding: 1rem;
+  }
+  .brand {
+    margin-bottom: 1rem;
+  }
+  nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  .nav-item {
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+  }
+  main {
+    height: auto;
+  }
+  .top-bar {
+    height: auto;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  .content-container {
+    padding: 1rem;
+    overflow: visible;
+  }
+  .grid-2col {
+    grid-template-columns: 1fr;
+  }
+  .terminal-card {
+    grid-column: span 1;
+  }
+}
+
+/* Modal Overlay & DOS Dialog */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background-color: #000000;
+  border: 3px double #ffffff;
+  width: 90%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  background-color: #ffffff;
+  color: #000000;
+  padding: 0.6rem 1rem;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  max-height: 420px;
+  overflow-y: auto;
+  font-family: 'Share Tech Mono', monospace;
+  line-height: 1.5;
+  color: #ffffff;
+}
+
+/* Floating DOS Muxing Monitor box */
+.stego-mux-monitor {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 240px;
+  background-color: #000000;
+  border: 2px solid #ffffff;
+  padding: 8px;
+  z-index: 3000;
+  box-shadow: 4px 4px 0px #555555;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.stego-mux-title {
+  background: #ffffff;
+  color: #000000;
+  padding: 2px 4px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.stego-mux-video {
+  width: 100%;
+  height: 130px;
+  border: 1px solid #555555;
+  background: #000;
+}

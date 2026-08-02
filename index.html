@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BUM16 - Benn's Ultrasonic Modem in 16-FSK</title>
+  <meta name="description" content="Standalone ultrasonic audio data modem operating between 16.5 kHz and 19.0 kHz. Encodes and decodes text, encrypted messages, and images using sound.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside>
+    <div class="brand">
+      <div class="brand-logo">B</div>
+      <div class="brand-text">
+        <h1>BUM16</h1>
+        <span>Ultrasonic Modem</span>
+      </div>
+    </div>
+
+    <nav>
+      <a href="#" class="nav-item active" data-tab="transmit" id="nav-btn-transmit">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+        Transmit (Encode)
+      </a>
+      <a href="#" class="nav-item" data-tab="receive" id="nav-btn-receive">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+        </svg>
+        Receive (Decode)
+      </a>
+      <a href="#" class="nav-item" data-tab="embed" id="nav-btn-embed">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        </svg>
+        Embed in Audio
+      </a>
+      <a href="#" class="nav-item" data-tab="settings" id="nav-btn-settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        </svg>
+        Diagnostics &amp; Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      BUM16 Modem v0.90<br>
+      <span style="font-size: 0.7rem; color: var(--text-secondary); display: block; margin-top: 0.2rem;">By: Benn Jordan</span>
+    </div>
+  </aside>
+
+  <!-- Main Workstation -->
+  <main>
+    <!-- Top System Stats bar -->
+    <div class="top-bar">
+      <div class="system-status">
+        <div class="stat-item">
+          <span class="stat-label">Modem State:</span>
+          <span class="indicator pulse-cyan" id="lock-indicator"></span>
+          <span class="stat-value" id="lock-status-val">INACTIVE</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Frequency Band:</span>
+          <span class="stat-value">16.5 kHz - 19.0 kHz</span>
+        </div>
+      </div>
+      <div class="system-status">
+        <div class="stat-item">
+          <span class="stat-label">Protocol:</span>
+          <span class="stat-value" id="top-protocol-val">AUTO-DETECT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Workspace -->
+    <div class="content-container">
+
+      <!-- ================= TRANSMIT TAB ================= -->
+      <section class="tab-content active" id="transmit-tab">
+        <div class="grid-2col">
+          <!-- Encoder Controls -->
+          <div class="card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm1 14h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              Payload Configurator
+            </h2>
+            
+            <div class="form-group">
+              <label for="tx-type">Data Transmission Type</label>
+              <select id="tx-type" class="input-control">
+                <option value="text">Plain/Encrypted Text</option>
+                <option value="image">Quantized Image File</option>
+              </select>
+            </div>
+
+            <!-- Text Option -->
+            <div id="text-input-group">
+              <div class="form-group">
+                <label for="tx-text">Message Content</label>
+                <textarea id="tx-text" class="input-control" placeholder="Enter secret message to modulate (keep under 200 bytes for fast transfer)..."></textarea>
+              </div>
+
+              <div class="form-group" id="encrypt-toggle-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="tx-encrypt-chk" style="cursor: pointer;">
+                <label for="tx-encrypt-chk" class="checkbox-label">Encrypt Message payload</label>
+              </div>
+
+              <div class="form-group" id="tx-password-group" style="display: none;">
+                <label for="tx-password">Cipher Key (Password)</label>
+                <input type="password" id="tx-password" class="input-control" placeholder="Enter decryption password...">
+              </div>
+            </div>
+
+            <!-- Image Option -->
+            <div id="image-input-group" style="display: none;">
+              <div class="form-group">
+                <label>Upload Target Image</label>
+                <div class="upload-zone" id="upload-zone">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                  </svg>
+                  <p>Drag &amp; Drop PNG/JPG files here</p>
+                  <span>Or click to open file explorer</span>
+                  <input type="file" id="image-file-input" style="display: none;" accept="image/png, image/jpeg">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="img-res-select">Downsampling Grid Resolution</label>
+                <select id="img-res-select" class="input-control">
+                  <option value="32">(Recommended) 32 x 32 Pixel Art</option>
+                  <option value="40">40 x 40 Grid</option>
+                  <option value="48">48 x 48 Grid</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="img-dither-chk" checked style="cursor: pointer;">
+                <label for="img-dither-chk" class="checkbox-label">Apply Floyd-Steinberg Dithering</label>
+              </div>
+
+              <!-- Live Image Previews -->
+              <div class="image-previews-container">
+                <div class="preview-box">
+                  <h3>Original</h3>
+                  <img id="orig-preview-img" class="preview-img" style="display: none;" alt="Original preview">
+                </div>
+                <div class="preview-box">
+                  <h3>Quantized</h3>
+                  <canvas id="quant-preview-canvas" class="preview-canvas" style="display: none;"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+              <button class="btn btn-primary" id="btn-generate-audio" style="width: 100%;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+                Generate Ultrasonic Wave
+              </button>
+            </div>
+          </div>
+
+          <!-- Waveform / Spectrogram Previews -->
+          <div class="card visualizer-container" id="visualizer-card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3v18M17 7v10M22 10v4M7 5v14M2 9v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Signal Spectrogram (16.5k - 19.0kHz Zoomed)
+            </h2>
+            
+            <canvas id="spectrogram-canvas" class="viz-canvas"></canvas>
+            
+            <h2>Waveform Envelope</h2>
+            <canvas id="waveform-canvas" class="viz-canvas"></canvas>
+
+            <!-- Audio Playback Preview and Download -->
+            <div class="player-controls" id="player-card" style="display: none;">
+              <div class="player-info">
+                <span class="player-title">Ultrasonic Carrier Wave</span>
+                <span class="player-duration" id="preview-duration">0.00s</span>
+              </div>
+              <div class="player-buttons" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="btn-play-preview" disabled style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#000">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  Play
+                </button>
+                <button class="btn" id="btn-download-wav" disabled style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">
+                  WAV
+                </button>
+                <button class="btn" id="btn-download-video" disabled style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">
+                  Export Video
+                </button>
+              </div>
+            </div>
+
+            <!-- Video Player Preview Block -->
+            <div id="video-preview-container" style="display: none; margin-top: 1rem; border: 2px solid var(--panel-border); background-color: #000; padding: 0.5rem; text-align: center; flex-direction: column;">
+              <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.4rem; text-transform: uppercase;">Generated Video Preview</span>
+              <video id="video-preview-player" controls style="max-width: 100%; height: auto; border: 1px solid var(--panel-border-muted);"></video>
+              <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; justify-content: center;">
+                <button class="btn btn-primary" id="btn-download-video-file" style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">Download Video</button>
+                <button class="btn" id="btn-close-video-preview" style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">Close Preview</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RECEIVE TAB ================= -->
+      <section class="tab-content" id="receive-tab">
+        <div class="grid-2col">
+          <!-- Mic Controller -->
+          <div class="card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+              </svg>
+              Acoustic Demodulator
+            </h2>
+
+            <div class="form-group">
+              <label>Microphone Live Level</label>
+              <div style="background-color: rgba(0,0,0,0.4); border: 1px solid var(--panel-border); border-radius: 6px; height: 16px; overflow: hidden; margin-bottom: 1rem;">
+                <div id="mic-level-fill" style="background: linear-gradient(90deg, var(--accent-cyan), var(--accent-emerald)); width: 0%; height: 100%; transition: width 0.1s ease;"></div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <button class="btn btn-primary" id="btn-mic-toggle" style="width: 100%;">Start Microphone</button>
+              <button class="btn" id="btn-capture-tab-audio" style="width: 100%;">Capture Tab Audio</button>
+              <button class="btn" id="btn-upload-wav-decode" style="grid-column: span 2; width: 100%;">Upload Audio/Video File</button>
+              <input type="file" id="wav-file-input" style="display: none;" accept="audio/*,video/*">
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem; margin-bottom: 0;">
+              <label for="rx-url-input">Decode from Direct Audio/Video URL</label>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="url" id="rx-url-input" class="input-control" placeholder="https://example.com/audio.mp3 (CORS enabled)..." style="flex-grow: 1; font-size: 0.85rem;">
+                <button class="btn" id="btn-url-decode">Load</button>
+              </div>
+            </div>
+
+            <!-- Decoding Progress Indicator -->
+            <div class="form-group" style="margin-top: 1.5rem;">
+              <label>Decoding Sync Frame Progress</label>
+              <div style="background-color: rgba(0,0,0,0.4); border: 1px solid var(--panel-border); border-radius: 6px; height: 12px; overflow: hidden; margin-top: 0.5rem;">
+                <div id="decode-progress-fill" style="background-color: var(--accent-emerald); width: 0%; height: 100%; transition: width 0.15s ease;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demodulator Output Display -->
+          <div class="card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+              </svg>
+              Decoded Output
+            </h2>
+
+            <div class="decode-output-box" id="decode-output-box">
+              <div class="decode-placeholder" id="decode-placeholder">
+                <svg viewBox="0 0 24 24">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
+                </svg>
+                <p>Waiting for transmission...</p>
+                <span style="font-size: 0.75rem;">Place speaker close to the microphone and hit play.</span>
+              </div>
+
+              <!-- Decrypted password prompt overlay -->
+              <div class="decrypt-prompt" id="decrypt-prompt">
+                <p style="font-size: 0.9rem; color: #ffd600; font-weight: bold; text-align: center;">🛡️ Decryption Key Required</p>
+                <input type="password" id="rx-decrypt-password" class="input-control" placeholder="Enter key/password...">
+                <button class="btn btn-primary" id="btn-decrypt-payload" style="width: 100%;">Decrypt Output</button>
+              </div>
+
+              <!-- Outputs -->
+              <div class="decode-result-text" id="decode-result-text"></div>
+              <canvas class="decode-result-image" id="decode-result-image"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= EMBED TAB ================= -->
+      <section class="tab-content" id="embed-tab">
+        <div class="grid-2col">
+          <!-- Embedder Input Card -->
+          <div class="card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+              </svg>
+              Embed Secret in Audio/Video
+            </h2>
+
+            <div class="form-group">
+              <label>1. Select Base Audio/Video File</label>
+              <div class="upload-zone" id="embed-file-zone">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+                <p>Upload Music, Podcast or Video (.mp3, .wav, .mp4, etc.)</p>
+                <span id="embed-file-info" style="font-weight: 600; color: var(--accent-cyan);">Click to select file</span>
+                <input type="file" id="embed-file-input" style="display: none;" accept="audio/*,video/*">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="embed-text">2. Message Content</label>
+              <textarea id="embed-text" class="input-control" placeholder="Enter secret message to embed..."></textarea>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="embed-encrypt-chk" style="cursor: pointer;">
+              <label for="embed-encrypt-chk" class="checkbox-label">Encrypt Message payload</label>
+            </div>
+
+            <div class="form-group" id="embed-password-group" style="display: none;">
+              <label for="embed-password">Decryption Password</label>
+              <input type="password" id="embed-password" class="input-control" placeholder="Enter password...">
+            </div>
+
+            <div class="form-group">
+              <label>3. Steganography Parameters</label>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                <span>Start Delay:</span>
+                <span id="embed-delay-span" class="stat-value">0s</span>
+              </div>
+              <input type="range" id="embed-delay-slider" class="input-control" min="0" max="60" value="0" style="padding: 0; height: auto;">
+              
+              <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.75rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                <span>Modem Volume (Mix Ratio):</span>
+                <span id="embed-gain-span" class="stat-value">15%</span>
+              </div>
+              <input type="range" id="embed-gain-slider" class="input-control" min="5" max="50" value="15" style="padding: 0; height: auto;">
+              <span style="font-size: 0.72rem; color: var(--text-secondary); display: block; margin-top: 0.4rem; line-height: 1.3;">
+                💡 Higher values improve microphone recovery but make the ultra-high frequencies slightly more audible.
+              </span>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+              <button class="btn btn-primary" id="btn-process-embed" style="width: 100%;" disabled>
+                Mix and Embed Signal
+              </button>
+            </div>
+          </div>
+
+          <!-- Embedder Output/Status Card -->
+          <div class="card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+              </svg>
+              Stego-Audio Export
+            </h2>
+
+            <div class="decode-output-box" id="embed-export-box">
+              <div class="decode-placeholder" id="embed-placeholder">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+                </svg>
+                <p>Upload a base file and configure payload to begin.</p>
+              </div>
+
+              <!-- Output Controls -->
+              <div id="embed-success-ui" style="display: none; width: 100%; text-align: center; flex-direction: column; gap: 0.6rem; align-items: center;">
+                <p style="color: var(--accent-emerald); font-weight: bold; font-size: 1.05rem;">🎉 Secret Embedded Successfully!</p>
+                <span id="embed-success-desc" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0.5rem;"></span>
+                <button class="btn btn-primary" id="btn-download-embedded-wav" style="width: 80%;">
+                  Download Stego-WAV File
+                </button>
+                <button class="btn" id="btn-export-stego-video" style="width: 80%; display: none;">
+                  Export Stego-Video
+                </button>
+                <button class="btn" id="btn-play-embedded-audio" style="width: 80%;">
+                  Play Stego Preview
+                </button>
+              </div>
+
+              <!-- Video Muxed Preview Block -->
+              <div id="embed-video-preview-container" style="display: none; margin-top: 1rem; border: 2px solid var(--panel-border); background-color: #000; padding: 0.5rem; text-align: center; flex-direction: column; width: 100%;">
+                <span style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.4rem; text-transform: uppercase;">Muxed Video Preview</span>
+                <video id="embed-video-preview-player" controls style="max-width: 100%; height: auto; border: 1px solid var(--panel-border-muted);"></video>
+                <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                  <button class="btn btn-primary" id="btn-download-stego-video-file" style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">Download Video</button>
+                  <button class="btn" id="btn-close-embed-video-preview" style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">Close Preview</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= DIAGNOSTICS & SETTINGS TAB ================= -->
+      <section class="tab-content" id="settings-tab">
+        <div class="grid-2col">
+          <!-- Modem Settings -->
+          <div class="card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              </svg>
+              Modem Core Parameters
+            </h2>
+
+            <div class="form-group">
+              <label>Symbol Speed Profile</label>
+              <select id="modem-speed-select" class="input-control">
+                <option value="extreme">Extreme Echo Immunity (200ms/symbol)</option>
+                <option value="slow">Slow &amp; Highly Robust (120ms/symbol)</option>
+                <option value="normal" selected>(Recommended) Normal (80ms/symbol)</option>
+                <option value="fast">Fast (50ms/symbol)</option>
+              </select>
+              <span style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem; display:block;">
+                Slower durations improve immunity to indoor acoustics/reverberations.
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label style="display: flex; justify-content: space-between; align-items: center;">
+                Transmission Protocol
+                <button class="btn" id="btn-protocol-info" style="padding: 0.1rem 0.4rem; font-size: 0.75rem; border: 1px solid var(--panel-border); font-family: monospace; cursor: pointer;">[?] Info</button>
+              </label>
+              <select id="modem-protocol-select" class="input-control">
+                <option value="auto" selected>Auto-Detect (Receiver Mode)</option>
+                <option value="std">Standard 16-FSK</option>
+                <option value="par">Parallel FSK (Double Speed)</option>
+                <option value="fec">FEC Robust (Repetition Redundancy)</option>
+              </select>
+              <span style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem; display:block;">
+                Select protocol to encode, or choose Auto-Detect to scan sync frequencies.
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label>Video Export Container</label>
+              <select id="video-export-format" class="input-control">
+                <option value="mp4" selected>MP4 (Standard H.264/AAC)</option>
+                <option value="webm">WebM (VP9/Opus)</option>
+              </select>
+              <span style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem; display:block;">
+                Select format container for custom generator and stego video exports.
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label>Current Configuration</label>
+              <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; border:1px solid var(--panel-border);">
+                🚀 Symbol Duration: <span class="stat-value" id="symbol-dur-span">80ms</span><br>
+                🎛️ Data Bins: <span class="stat-value">16 Channels (16.5 kHz - 18.75 kHz)</span><br>
+                📡 Sync Bandwidth: <span class="stat-value">19.00 kHz</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Preview Volumetric/Gain</label>
+              <div class="range-slider-group">
+                <input type="range" id="volume-slider" min="10" max="100" value="80">
+                <span id="vol-span">80%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loopback Diagnostic Self-Test -->
+          <div class="card">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+              </svg>
+              Modem Diagnostic Suite
+            </h2>
+            <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.4;">
+              Run an in-memory loopback test to verify that the cryptographic, quantization, dithering, FSK modulation, and Goertzel demodulation subroutines are fully functioning. No microphone is required.
+            </p>
+            
+            <div class="selftest-status" id="selftest-status">
+              Modem test suite ready to run...
+            </div>
+
+            <button class="btn btn-emerald" id="btn-run-selftest" style="width: 100%; margin-top: 1.5rem;">
+              Execute Loopback Test Sequence
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TERMINAL LOG CARD (GLOWING CONSOLE) ================= -->
+      <section class="card terminal-card">
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 12H5v-2h6v2zm4-6l-4 4v-8l4 4z"/>
+          </svg>
+          BUM16 Core System Logs
+        </h2>
+        <div class="terminal-console" id="terminal-console">
+          <!-- Terminal logs injected here -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- DOS-style Protocol Help Modal -->
+  <div id="protocol-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>BUM16 // PROTOCOL REFERENCE GUIDE</span>
+        <button id="btn-close-modal" class="btn" style="padding: 0.2rem 0.6rem; font-size: 0.8rem; cursor: pointer;">[X]</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-weight: bold; margin-bottom: 0.5rem; text-decoration: underline;">1. STANDARD 16-FSK (DEFAULT)</p>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+          Modulates 4 bits per symbol onto 16 carrier tones spaced by 150 Hz. Requires relatively low SNR and is highly compatible across all sound devices. It is the base fallback protocol.
+        </p>
+
+        <p style="font-weight: bold; margin-bottom: 0.5rem; text-decoration: underline;">2. PARALLEL FSK (FAST MODE)</p>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+          Transmits two carrier tones simultaneously (one on Channel A and one on Channel B, interleaved by 75 Hz). Modulates 8 bits (1 full byte) per symbol, effectively **doubling transmission speeds**. Recommended for quiet environments or direct tab capture.
+        </p>
+
+        <p style="font-weight: bold; margin-bottom: 0.5rem; text-decoration: underline;">3. FEC ROBUST (SECURE ERROR CORRECTION)</p>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+          Transmits every symbol twice in succession. The receiver uses **Soft-Decision SNR Confidence Scoring** to choose the copy with the clearer Signal-to-Noise Ratio. Doubles transmission time, but survives severe ambient noise bursts and speaker echo.
+        </p>
+        
+        <p style="font-weight: bold; margin-bottom: 0.5rem; text-decoration: underline;">4. AUTO-DETECT MODE</p>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
+          By default, the receiver monitors all three synchronization carriers (19000 Hz, 19150 Hz, and 19300 Hz) simultaneously. Whichever sync tone triggers first automatically switches BUM16's demodulator into that protocol.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script Modules -->
+  <script src="crypto.js"></script>
+  <script src="image-codec.js"></script>
+  <script src="modem.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
