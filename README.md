@@ -1,89 +1,45 @@
-# BUM16 - Benn's Ultrasonic Modem in 16-FSK
+# 🔊 BUM16 - Benn's Ultrasonic Modem (16-FSK)
 
-BUM16 is a standalone, client-side digital acoustic communication system designed to encode and decode text, encrypted messages, and small images over sound in the near-ultrasonic frequency range (**16.5 kHz to 19.0 kHz**).
+**BUM16** is an offline, browser-based modem that lets you send text, encrypted messages, and small pixel art images over sound waves using near-ultrasonic frequencies (**16.5 kHz to 19.0 kHz**). 
 
-It is written in pure, dependency-free HTML5, CSS3, and JavaScript, meaning it runs entirely offline on any browser without any compilation, command-line setup, or Node.js environment requirements.
+It is built with plain old HTML5, CSS3, and JavaScript. There's nothing to install and it should work entirely in-browser. 
 
 ---
 
-## 🛠️ System Architecture
+## 🛠️ How it Works
 
-BUM16 operates using a full-stack digital acoustic modem pipeline:
+Under the hood, BUM16 runs a full digital acoustic pipeline to process and decode audio:
 
 ```mermaid
 graph TD
-    subgraph Transmitter (Encoder)
-        A[Input Text/Image] --> B[RLE Compression / Encryption]
-        B --> C[Packet Assembly & CRC32]
-        C --> D[16-FSK Modulator]
-        D --> E[Smooth Sine Gen + Hanning Window]
-        E --> F[Uncompressed WAV File]
+    subgraph TX_INPUT ["1. Input & Compression"]
+        A[Input Text or Image] --> B[RLE Compression / Encryption]
     end
-    subgraph Receiver (Decoder)
+
+    subgraph TX_MOD ["2. Framing & Modulation"]
+        C[Packet Assembly & CRC32] --> D[16-FSK Modulator]
+    end
+
+    subgraph TX_AUDIO ["3. Audio Signal Generation"]
+        E[Smooth Sine Gen + Hanning Window] --> F[Uncompressed WAV File]
+    end
+
+    subgraph RX_IN ["4. Audio Capture & Buffer"]
         G[Microphone Input / WAV Upload] --> H[Sliding Window Ring Buffer]
-        H --> I[Preamble & Sync Tone Detection]
-        I --> J[Goertzel Energy Filter Array]
-        J --> K[Symbol Demodulation & Reassembly]
-        K --> L[CRC32 Check & Decryption/RLE Decompress]
-        L --> M[Decoded Output Text/Image]
     end
-```
 
-### 1. Packet Structure
-Each transmission begins with synchronization elements followed by the payload packet:
-1. **Preamble (4 symbols):** Alternating carrier tones $F_0$ (16500 Hz) and $F_{15}$ (18750 Hz) to allow the receiver to calculate the ambient noise floor, calibrate automatic gain control (AGC), and arm the sync trigger.
-2. **Sync Marker (1 symbol):** A single symbol at $F_{sync}$ (19000 Hz) to mark the precise boundary alignment for data decoding.
-3. **Header (7 bytes):**
-   - **Byte 0:** Data Type (0 = Plain Text, 1 = Encrypted Text, 2 = Compressed Image).
-   - **Bytes 1-2:** Payload length $L$ (Uint16 Big-Endian).
-   - **Bytes 3-6:** Payload CRC32 (Uint32 Big-Endian) for 100% data integrity check.
-4. **Payload ($L$ bytes):** The text, ciphertext, or quantized image bytes.
+    subgraph RX_SYNC ["5. Sync & Filtering"]
+        I[Preamble & Sync Tone Detection] --> J[Goertzel Energy Filter Array]
+    end
 
-### 2. 16-FSK Modulation & Envelope Shaping
-- Data is transmitted in 4-bit nibbles (values `0` to `15`), mapping to 16 discrete frequencies spaced by 150 Hz:
-  $$F_i = 16500 + i \times 150 \text{ Hz}$$
-- Highest data frequency: $16500 + 15 \times 150 = 18750$ Hz.
-- To prevent high-frequency transients ("audible clicks"), each symbol applies a **5ms raised-cosine Hanning envelope** at the start and end. This smooths the signal, keeping the audio inaudible to adults.
+    subgraph RX_OUT ["6. Demodulation & Payload Extraction"]
+        K[Symbol Demodulation & Reassembly] --> L[CRC32 Check & Decryption/RLE Decompress]
+        L --> M[Decoded Output Text or Image]
+    end
 
-### 3. Goertzel Demodulation
-- Instead of computing a heavy FFT, the receiver employs **Goertzel Filters** tuned exactly to the 17 operational frequencies. The Goertzel algorithm operates in $O(N)$ time and achieves selective energy detection.
-- **Dynamic SNR Tracking:** The demodulator estimates local Signal-to-Noise Ratio (SNR) by dividing the peak carrier energy by the average of the remaining carriers:
-  $$\text{SNR} = \frac{E_{max}}{\text{Average}(E_{\text{rest}})}$$
-  If the SNR falls below the threshold (e.g. 4.0), the signal is flagged as noise, preventing false-triggers.
-
-### 4. Custom 16-Color RLE Image Codec
-To transmit images at 10–20 bytes/sec, the image codec downsamples files to pixel art grids ($32\times32$ to $48\times48$), maps colors to a beautiful custom 16-color palette (using optional Floyd-Steinberg dithering), and compresses using a hybrid format:
-- **Raw Packed (0):** 4 bits per pixel (2 pixels/byte). A 32x32 image is exactly 512 bytes.
-- **RLE Mode (1):** Run-Length Encoding. Each byte stores `(run_length - 1) << 4 | color_index`, allowing simple icons/drawings to compress to under 150 bytes.
-- The encoder automatically selects the smaller format.
-
-### 5. Pure JavaScript Cryptography
-- Password-based encryption using a counter-mode (CTR) stream cipher.
-- Keystream generated by hashing the derived password key, a random 8-byte salt, and block indices with a custom SHA-256 implementation.
-- Operates in any browser context, including local `file://` locations where Web Crypto API (`crypto.subtle`) is blocked.
-
----
-
-## 🚀 How to Use BUM16
-
-1. **Launch the Modem:**
-   Simply double-click `index.html` to launch BUM16 in your web browser. No local web server or terminal execution is required.
-   
-2. **Transmit Data:**
-   - Select your mode (Text or Image).
-   - Enter your text (optionally toggle encryption and provide a password) or upload an image.
-   - Click **Generate Ultrasonic Wave** to create the signal.
-   - You can review the waveform envelope, zoom in on the FSK frequencies in the spectrogram, play the preview, or click **Download WAV** to save the uncompressed file.
-
-3. **Receive Data:**
-   - On the target device, navigate to the **Receive** tab.
-   - **Microphone Demodulation:** Click **Start Microphone** (enable mic access) and play the encoded sound through the air.
-   - **Tab / Social Media Capture (Digital Loopback):** Click **Capture Tab Audio**, select the browser tab containing the Instagram, TikTok, or YouTube video, and ensure you tick the **"Share audio"** checkbox in the browser prompt. BUM16 will capture the tab's digital audio track directly, bypassing CORS CDN blocks and avoiding room echo.
-   - **File Upload:** Click **Upload Audio/Video File** to parse a local audio or video container (.wav, .mp3, .mp4, .webm, .mov) and decode the audio track instantly.
-   - **URL Loading:** Paste a direct, CORS-enabled URL to download and decode the media file.
-   - The modem will lock onto the preamble, synchronize boundaries, and decode the payload automatically.
-
-4. **Verify Components:**
-   - Open the **Diagnostics & Settings** tab.
-   - Click **Execute Loopback Test Sequence**.
-   - This runs the entire system pipeline in-memory (resizing, dithering, RLE compression, encryption, FSK modulation, and Goertzel demodulation) and verifies bitwise equality.
+    %% Pipeline flow between rows
+    B --> C
+    D --> E
+    F -. Acoustic or Digital Path .-> G
+    H --> I
+    J --> K
